@@ -16,10 +16,10 @@ opencode plugins for **ExaSearch** (AI-powered web search) and **Context7** (liv
 
 ```bash
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/exacontext7/exacontext7-opencode-plugins/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mcmanrz/exacontext7-opencode-plugins/main/install.sh | bash
 
 # Windows PowerShell
-iwr https://raw.githubusercontent.com/exacontext7/exacontext7-opencode-plugins/main/install.ps1 | iex
+iwr https://raw.githubusercontent.com/mcmanrz/exacontext7-opencode-plugins/main/install.ps1 | iex
 ```
 
 That's it. The installer adds the plugin to your global `~/.config/opencode/opencode.jsonc`. Restart opencode and the tools are available.
@@ -58,7 +58,7 @@ curl -fsSL .../install.sh | bash -s -- \
 ### Option A: One-Liner Installer (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/exacontext7/exacontext7-opencode-plugins/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mcmanrz/exacontext7-opencode-plugins/main/install.sh | bash
 ```
 
 The installer:
@@ -174,7 +174,7 @@ exacontext7-opencode-plugins
 ## Building From Source
 
 ```bash
-git clone https://github.com/exacontext7/exacontext7-opencode-plugins.git
+git clone https://github.com/mcmanrz/exacontext7-opencode-plugins.git
 cd exacontext7-opencode-plugins
 npm install
 npm run build       # tsc + copies skill .md files to dist/

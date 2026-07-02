@@ -1,9 +1,10 @@
 {
   "name": "exacontext7-opencode-plugins",
-  "version": "1.0.0",
-  "type": "module",
+  "version": "1.0.1",
   "description": "opencode plugins for ExaSearch and Context7 with round-robin multi-key support",
+  "type": "module",
   "license": "MIT",
+  "author": "Mc. R <69450816+mcmanrz@users.noreply.github.com>",
   "keywords": [
     "opencode",
     "exa",
@@ -16,15 +17,23 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": "./dist/v2-plugin.js",
+    "./exasearch": "./dist/exasearch-plugin.js",
+    "./context7": "./dist/context7-plugin.js"
+  },
+  "bin": {
+    "exacontext7-install": "dist/install.js"
+  },
   "engines": {
     "node": ">=18"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/exacontext7/exacontext7-opencode-plugins.git"
+    "url": "git+https://github.com/mcmanrz/exacontext7-opencode-plugins.git"
   },
   "scripts": {
-    "build": "tsc && rm -rf dist/skills && cp -r src/skills dist/skills",
+    "build": "tsc && rm -rf dist/skills && cp -r src/skills dist/skills && printf '#!/usr/bin/env node\\n%s\\n' \"$(cat dist/install.js)\" > dist/install.js.tmp && mv dist/install.js.tmp dist/install.js",
     "prepublishOnly": "npm run build",
     "build:watch": "tsc --watch",
     "test": "node --import tsx --test test/**/*.test.ts",
@@ -35,6 +44,5 @@
     "@types/node": "^26.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
-  },
-  "author": "Mc. R <69450816+mcmanrz@users.noreply.github.com>"
+  }
 }
