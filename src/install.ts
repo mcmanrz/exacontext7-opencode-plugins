@@ -41,6 +41,18 @@ function findPluginIndex(text: string): number {
   })
 }
 
+function findSubPluginIndex(text: string, subpath: string): number {
+  const tree = parseTree(text)
+  if (!tree) return -1
+  const plugins = findNodeAtLocation(tree, ["plugin"])
+  if (!plugins?.children) return -1
+  const fullPath = `${PLUGIN_NAME}/${subpath}`
+  return plugins.children.findIndex((child) => {
+    if (child.type === "string" && child.value === fullPath) return true
+    return false
+  })
+}
+
 function arrayLength(text: string): number {
   const tree = parseTree(text)
   if (!tree) return 0
@@ -52,17 +64,6 @@ function arrayLength(text: string): number {
 function parseKeysFlag(raw: string | undefined): string[] | undefined {
   if (!raw) return undefined
   return raw.split(",").map((s) => s.trim()).filter(Boolean)
-}
-
-function buildPluginValue(
-  exaKeys: string[] | undefined,
-  context7Keys: string[] | undefined,
-): string | [string, Record<string, unknown>] {
-  if (!exaKeys?.length && !context7Keys?.length) return PLUGIN_NAME
-  const options: Record<string, Record<string, unknown>> = {}
-  if (exaKeys?.length) options.exa = { apiKeys: exaKeys }
-  if (context7Keys?.length) options.context7 = { apiKeys: context7Keys }
-  return [PLUGIN_NAME, options]
 }
 
 function warnMissingKeys(exa: string[] | undefined, ctx7: string[] | undefined): void {
@@ -82,6 +83,26 @@ function warnMissingKeys(exa: string[] | undefined, ctx7: string[] | undefined):
   }
 }
 
+function buildPluginValue(
+  exaKeys: string[] | undefined,
+  context7Keys: string[] | undefined,
+): string | [string, Record<string, unknown>] {
+  if (!exaKeys?.length && !context7Keys?.length) return PLUGIN_NAME
+  const options: Record<string, Record<string, unknown>> = {}
+  if (exaKeys?.length) options.exa = { apiKeys: exaKeys }
+  if (context7Keys?.length) options.context7 = { apiKeys: context7Keys }
+  return [PLUGIN_NAME, options]
+}
+
+function insertValue(text: string, value: unknown): string {
+  const len = arrayLength(text)
+  const edits = modify(text, ["plugin", len], value, {
+    formattingOptions: FORMAT_OPTS,
+    isArrayInsertion: true,
+  })
+  return applyEdits(text, edits)
+}
+
 function install(exaKeys: string[] | undefined, context7Keys: string[] | undefined, dryRun: boolean): void {
   const cf = findConfigFile()
   const exists = existsSync(cf)
@@ -93,39 +114,53 @@ function install(exaKeys: string[] | undefined, context7Keys: string[] | undefin
     }
     const dir = configDir()
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-    const value = buildPluginValue(exaKeys, context7Keys)
-    const pluginEntry = typeof value === "string"
-      ? `"${value}"`
-      : JSON.stringify(value, null, 2).replace(/\n/g, "\n  ")
-    writeFileSync(cf, `{\n  "plugin": [${pluginEntry}]\n}\n`, "utf-8")
-    console.log(`Created ${cf}`)
+    const main = buildPluginValue(exaKeys, context7Keys)
+    const entry = typeof main === "string" ? `"${main}"` : JSON.stringify(main)
+    writeFileSync(cf, `{\n  "plugin": [\n    ${entry},\n    "${PLUGIN_NAME}/exasearch",\n    "${PLUGIN_NAME}/context7"\n  ]\n}\n`, "utf-8")
+    console.log(`Created ${cf} with all 3 plugin entries`)
     warnMissingKeys(exaKeys, context7Keys)
     return
   }
 
-  const text = readFileSync(cf, "utf-8")
+  let text = readFileSync(cf, "utf-8")
 
-  if (findPluginIndex(text) !== -1) {
+  // Insert main plugin entry (V2 skills + options)
+  if (findPluginIndex(text) === -1) {
+    if (dryRun) {
+      const desc = typeof buildPluginValue(exaKeys, context7Keys) === "string" ? "string" : "tuple"
+      console.log(`[DRY RUN] Would add ${PLUGIN_NAME} (${desc}) to plugin in ${cf}`)
+    } else {
+      text = insertValue(text, buildPluginValue(exaKeys, context7Keys))
+      console.log(`Added "${PLUGIN_NAME}" (V2 skills) to ${cf}`)
+    }
+  } else {
     console.log(`Plugin "${PLUGIN_NAME}" is already in ${cf}`)
-    return
   }
 
-  const value = buildPluginValue(exaKeys, context7Keys)
-  const len = arrayLength(text)
-  const edits = modify(text, ["plugin", len], value, {
-    formattingOptions: FORMAT_OPTS,
-    isArrayInsertion: true,
-  })
-
-  if (dryRun) {
-    const desc = typeof value === "string" ? `"${value}"` : "object with options"
-    console.log(`[DRY RUN] Would add ${desc} to plugin in ${cf}`)
-    return
+  // Insert exasearch sub-plugin (V1 MCP tools)
+  if (findSubPluginIndex(text, "exasearch") === -1) {
+    if (dryRun) {
+      console.log(`[DRY RUN] Would add "${PLUGIN_NAME}/exasearch" to plugin in ${cf}`)
+    } else {
+      text = insertValue(text, `${PLUGIN_NAME}/exasearch`)
+      console.log(`Added "${PLUGIN_NAME}/exasearch" (V1 ExaSearch tools) to ${cf}`)
+    }
   }
 
-  writeFileSync(cf, applyEdits(text, edits), "utf-8")
-  console.log(`Added "${PLUGIN_NAME}" to ${cf}`)
-  warnMissingKeys(exaKeys, context7Keys)
+  // Insert context7 sub-plugin (V1 MCP tools)
+  if (findSubPluginIndex(text, "context7") === -1) {
+    if (dryRun) {
+      console.log(`[DRY RUN] Would add "${PLUGIN_NAME}/context7" to plugin in ${cf}`)
+    } else {
+      text = insertValue(text, `${PLUGIN_NAME}/context7`)
+      console.log(`Added "${PLUGIN_NAME}/context7" (V1 Context7 tools) to ${cf}`)
+    }
+  }
+
+  if (!dryRun) {
+    writeFileSync(cf, text, "utf-8")
+    warnMissingKeys(exaKeys, context7Keys)
+  }
 }
 
 function uninstall(dryRun: boolean): void {
@@ -135,25 +170,37 @@ function uninstall(dryRun: boolean): void {
     process.exit(1)
   }
 
-  const text = readFileSync(cf, "utf-8")
-  const idx = findPluginIndex(text)
+  let text = readFileSync(cf, "utf-8")
 
-  if (idx === -1) {
+  // Remove all three entries
+  const subExaIdx = findSubPluginIndex(text, "exasearch")
+  const subCtx7Idx = findSubPluginIndex(text, "context7")
+  const mainIdx = findPluginIndex(text)
+
+  if (mainIdx === -1 && subExaIdx === -1 && subCtx7Idx === -1) {
     console.log(`Plugin "${PLUGIN_NAME}" not found in ${cf}`)
     process.exit(1)
   }
 
-  const edits = modify(text, ["plugin", idx], undefined, {
-    formattingOptions: FORMAT_OPTS,
-  })
+  // Remove in reverse order to preserve indices
+  for (const idx of [mainIdx, subCtx7Idx, subExaIdx].sort((a, b) => b - a)) {
+    if (idx === -1) continue
+    if (dryRun) {
+      console.log(`[DRY RUN] Would remove entry at index ${idx} from ${cf}`)
+    } else {
+      const edits = modify(text, ["plugin", idx], undefined, {
+        formattingOptions: FORMAT_OPTS,
+      })
+      text = applyEdits(text, edits)
+    }
+  }
 
   if (dryRun) {
-    console.log(`[DRY RUN] Would remove "${PLUGIN_NAME}" from ${cf}`)
     return
   }
 
-  writeFileSync(cf, applyEdits(text, edits), "utf-8")
-  console.log(`Removed "${PLUGIN_NAME}" from ${cf}`)
+  writeFileSync(cf, text, "utf-8")
+  console.log(`Removed all "${PLUGIN_NAME}" entries from ${cf}`)
 }
 
 function help(): void {
@@ -161,6 +208,11 @@ function help(): void {
   console.log(``)
   console.log(`  Install or remove exacontext7-opencode-plugins from your global`)
   console.log(`  opencode configuration (~/.config/opencode/opencode.jsonc).`)
+  console.log(``)
+  console.log(`  Adds 3 entries to the 'plugin' array:`)
+  console.log(`    1. exacontext7-opencode-plugins       → V2 skills (exasearch, context7)`)
+  console.log(`    2. exacontext7-opencode-plugins/exasearch → V1 ExaSearch MCP tools`)
+  console.log(`    3. exacontext7-opencode-plugins/context7 → V1 Context7 MCP tools`)
   console.log(``)
   console.log(`Usage:`)
   console.log(`  node install.js [command] [options]`)

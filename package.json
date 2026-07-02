@@ -1,6 +1,6 @@
 {
   "name": "exacontext7-opencode-plugins",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "opencode plugins for ExaSearch and Context7 with round-robin multi-key support",
   "type": "module",
   "license": "MIT",
@@ -40,10 +40,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@opencode-ai/plugin": "^1.17.0",
     "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.17.0",
     "@types/node": "^26.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
