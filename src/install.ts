@@ -149,21 +149,22 @@ function install(exaKeys: string[] | undefined, context7Keys: string[] | undefin
   }
 
   // Insert exasearch sub-plugin (V1 MCP tools)
+  const exaValue = buildSubPluginValue("exasearch", exaKeys)
   if (findSubPluginIndex(text, "exasearch") === -1) {
     if (dryRun) {
       console.log(`[DRY RUN] Would add "${PLUGIN_NAME}/exasearch" to plugin in ${cf}`)
     } else {
-      text = insertValue(text, `${PLUGIN_NAME}/exasearch`)
+      text = insertValue(text, exaValue)
       console.log(`Added "${PLUGIN_NAME}/exasearch" (V1 ExaSearch tools) to ${cf}`)
     }
   }
 
-  // Insert context7 sub-plugin (V1 MCP tools)
+  const ctx7Value = buildSubPluginValue("context7", context7Keys)
   if (findSubPluginIndex(text, "context7") === -1) {
     if (dryRun) {
       console.log(`[DRY RUN] Would add "${PLUGIN_NAME}/context7" to plugin in ${cf}`)
     } else {
-      text = insertValue(text, `${PLUGIN_NAME}/context7`)
+      text = insertValue(text, ctx7Value)
       console.log(`Added "${PLUGIN_NAME}/context7" (V1 Context7 tools) to ${cf}`)
     }
   }
