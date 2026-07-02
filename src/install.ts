@@ -49,6 +49,7 @@ function findSubPluginIndex(text: string, subpath: string): number {
   const fullPath = `${PLUGIN_NAME}/${subpath}`
   return plugins.children.findIndex((child) => {
     if (child.type === "string" && child.value === fullPath) return true
+    if (child.type === "array" && child.children?.[0]?.type === "string" && child.children[0].value === fullPath) return true
     return false
   })
 }
@@ -94,6 +95,12 @@ function buildPluginValue(
   return [PLUGIN_NAME, options]
 }
 
+function buildSubPluginValue(subpath: string, keys: string[] | undefined): string | [string, Record<string, unknown>] {
+  const fullPath = `${PLUGIN_NAME}/${subpath}`
+  if (!keys?.length) return fullPath
+  return [fullPath, { apiKeys: keys }]
+}
+
 function insertValue(text: string, value: unknown): string {
   const len = arrayLength(text)
   const edits = modify(text, ["plugin", len], value, {
@@ -116,7 +123,11 @@ function install(exaKeys: string[] | undefined, context7Keys: string[] | undefin
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     const main = buildPluginValue(exaKeys, context7Keys)
     const entry = typeof main === "string" ? `"${main}"` : JSON.stringify(main)
-    writeFileSync(cf, `{\n  "plugin": [\n    ${entry},\n    "${PLUGIN_NAME}/exasearch",\n    "${PLUGIN_NAME}/context7"\n  ]\n}\n`, "utf-8")
+    const subExa = buildSubPluginValue("exasearch", exaKeys)
+    const subCtx7 = buildSubPluginValue("context7", context7Keys)
+    const exaEntry = typeof subExa === "string" ? `"${subExa}"` : JSON.stringify(subExa)
+    const ctx7Entry = typeof subCtx7 === "string" ? `"${subCtx7}"` : JSON.stringify(subCtx7)
+    writeFileSync(cf, `{\n  "plugin": [\n    ${entry},\n    ${exaEntry},\n    ${ctx7Entry}\n  ]\n}\n`, "utf-8")
     console.log(`Created ${cf} with all 3 plugin entries`)
     warnMissingKeys(exaKeys, context7Keys)
     return
