@@ -30,7 +30,7 @@ function findConfigFile(): string {
 function findPluginIndex(text: string): number {
   const tree = parseTree(text)
   if (!tree) return -1
-  const plugins = findNodeAtLocation(tree, ["plugins"])
+  const plugins = findNodeAtLocation(tree, ["plugin"])
   if (!plugins?.children) return -1
   return plugins.children.findIndex((child) => {
     if (child.type === "string" && child.value === PLUGIN_NAME) return true
@@ -43,7 +43,7 @@ function findPluginIndex(text: string): number {
 function arrayLength(text: string): number {
   const tree = parseTree(text)
   if (!tree) return 0
-  const plugins = findNodeAtLocation(tree, ["plugins"])
+  const plugins = findNodeAtLocation(tree, ["plugin"])
   if (!plugins?.children || plugins.type !== "array") return 0
   return plugins.children.filter((c) => c.type !== "string" || c.value !== undefined).length
 }
@@ -96,7 +96,7 @@ function install(exaKeys: string[] | undefined, context7Keys: string[] | undefin
     const pluginEntry = typeof value === "string"
       ? `"${value}"`
       : JSON.stringify(value, null, 2).replace(/\n/g, "\n  ")
-    writeFileSync(cf, `{\n  "plugins": [${pluginEntry}]\n}\n`, "utf-8")
+    writeFileSync(cf, `{\n  "plugin": [${pluginEntry}]\n}\n`, "utf-8")
     console.log(`Created ${cf}`)
     warnMissingKeys(exaKeys, context7Keys)
     return
@@ -111,14 +111,14 @@ function install(exaKeys: string[] | undefined, context7Keys: string[] | undefin
 
   const value = buildPluginValue(exaKeys, context7Keys)
   const len = arrayLength(text)
-  const edits = modify(text, ["plugins", len], value, {
+  const edits = modify(text, ["plugin", len], value, {
     formattingOptions: FORMAT_OPTS,
     isArrayInsertion: true,
   })
 
   if (dryRun) {
     const desc = typeof value === "string" ? `"${value}"` : "object with options"
-    console.log(`[DRY RUN] Would add ${desc} to plugins in ${cf}`)
+    console.log(`[DRY RUN] Would add ${desc} to plugin in ${cf}`)
     return
   }
 
@@ -142,7 +142,7 @@ function uninstall(dryRun: boolean): void {
     process.exit(1)
   }
 
-  const edits = modify(text, ["plugins", idx], undefined, {
+  const edits = modify(text, ["plugin", idx], undefined, {
     formattingOptions: FORMAT_OPTS,
   })
 
