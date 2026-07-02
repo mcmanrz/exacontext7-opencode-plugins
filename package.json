@@ -1,0 +1,40 @@
+{
+  "name": "exacontext7-opencode-plugins",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "opencode plugins for ExaSearch and Context7 with round-robin multi-key support",
+  "license": "MIT",
+  "keywords": [
+    "opencode",
+    "exa",
+    "context7",
+    "web-search",
+    "documentation",
+    "ai",
+    "llm"
+  ],
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/exacontext7/exacontext7-opencode-plugins.git"
+  },
+  "scripts": {
+    "build": "tsc && rm -rf dist/skills && cp -r src/skills dist/skills",
+    "prepublishOnly": "npm run build",
+    "build:watch": "tsc --watch",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.17.0",
+    "@types/node": "^26.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "author": "Mc. R <69450816+mcmanrz@users.noreply.github.com>"
+}
