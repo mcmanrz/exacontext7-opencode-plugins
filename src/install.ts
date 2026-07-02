@@ -34,6 +34,7 @@ function findPluginIndex(text: string): number {
   if (!plugins?.children) return -1
   return plugins.children.findIndex((child) => {
     if (child.type === "string" && child.value === PLUGIN_NAME) return true
+    if (child.type === "array" && child.children?.[0]?.type === "string" && child.children[0].value === PLUGIN_NAME) return true
     const pkg = findNodeAtLocation(child, ["package"])
     if (pkg && pkg.type === "string" && pkg.value === PLUGIN_NAME) return true
     return false
@@ -56,12 +57,12 @@ function parseKeysFlag(raw: string | undefined): string[] | undefined {
 function buildPluginValue(
   exaKeys: string[] | undefined,
   context7Keys: string[] | undefined,
-): string | Record<string, unknown> {
+): string | [string, Record<string, unknown>] {
   if (!exaKeys?.length && !context7Keys?.length) return PLUGIN_NAME
   const options: Record<string, Record<string, unknown>> = {}
   if (exaKeys?.length) options.exa = { apiKeys: exaKeys }
   if (context7Keys?.length) options.context7 = { apiKeys: context7Keys }
-  return { package: PLUGIN_NAME, options }
+  return [PLUGIN_NAME, options]
 }
 
 function warnMissingKeys(exa: string[] | undefined, ctx7: string[] | undefined): void {

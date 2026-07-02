@@ -1,6 +1,6 @@
 {
   "name": "exacontext7-opencode-plugins",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "opencode plugins for ExaSearch and Context7 with round-robin multi-key support",
   "type": "module",
   "license": "MIT",
